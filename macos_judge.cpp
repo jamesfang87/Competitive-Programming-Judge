@@ -25,7 +25,7 @@ void check(int exit_code, int test_number) {
 
     // check for exit code
     if (exit_code != 0) {
-        std::cout << "\x1b[31m" << "RE" << "\x1b[0m";
+        std::cout << "\x1b[31m" << "RE with exit code: " << exit_code << "\x1b[0m";
         return;
     }
 
