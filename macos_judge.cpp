@@ -5,10 +5,11 @@
 #include <algorithm>
 #include <vector>
 
-std::string src_path = "\"/Users/jamesfang/CLionProjects/USACO/Silver/Graph Traversal/Connecting Two Barns/main.cpp\"";
-std::string test_data_path = "/Users/jamesfang/Downloads/prob2_silver_dec21";
+std::string src_path = "\"path/to/src_code.cpp\"";
+std::string test_data_path = "path/to/test_data";
 double time_limit = 2.0; // 2 s = 2000 ms
 double memory_limit = 256; // 256mb
+std::string compiler_flags = " -std=c++17 -O2 -lm -Wall "; // keep the leading and trailing spaces
 
 void check(int exit_code, int test_number) {
     /*
@@ -75,7 +76,7 @@ void check(int exit_code, int test_number) {
     }
 
     // output execution time and memory usage
-    std::cout << " \t" << execution_time * 1000 << " ms " << memory_used << " mb";
+    std::cout << "   \t" << execution_time * 1000 << " ms " << memory_used << " mb";
 }
 
 void run(int test_number) {
@@ -127,7 +128,7 @@ void run(int test_number) {
 }
 
 int compile() {
-    std::string compile_command = "g++ -std=c++17 -O2 -lm " + src_path + " -o submission -Wall";
+    std::string compile_command = "g++" + compiler_flags + src_path + " -o submission";
     FILE* pipe = popen(compile_command.c_str(), "r");
     if (!pipe) {
         std::cerr << "Error: Could not open pipe for compilation" << std::endl;
@@ -135,9 +136,15 @@ int compile() {
     }
 
     // Read compiler output line by line and display it
-    char buffer[128];
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-        std::cout << buffer;
+    char ch;
+    while ((ch = static_cast<char>(fgetc(pipe))) != EOF) {
+        std::cout << ch;
+
+        if (ferror(pipe)) {
+            std::cerr << "Error reading from pipe" << std::endl;
+            pclose(pipe);
+            return 1;
+        }
     }
 
     int exit_code = pclose(pipe);
