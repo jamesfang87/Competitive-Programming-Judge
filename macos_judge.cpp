@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <vector>
 
+// there are leading and trailing double quotation marks for src_path so g++ can still compile
+// if there are spaces within the path name
 std::string src_path = "\"path/to/src_code.cpp\"";
 std::string test_data_path = "path/to/test_data";
 double time_limit = 2.0; // 2 s = 2000 ms
