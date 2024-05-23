@@ -1,1 +1,1 @@
-This program should be compiled with g++. There are two versions, one for Windows Subsystem for Linux and one for MacOS.
+This program should be compiled with g++. This should work for both wsl2 and MacOs.
