@@ -52,14 +52,15 @@ void check(int exit_code, int test_number) {
     // now line contains information about time and memory usage:
 
     // check for time limit
-    double execution_time = std::stod(line);
+    std::string time = line.substr(line.find(':') + 1);
+    double execution_time = std::stod(time);
     if (execution_time > time_limit) {
         std::cout << "\x1b[31m" << "TLE\n" << "\x1b[0m";
         return;
     }
     // check for memory limit
-    std::string temp = line.substr(line.find("avgdata ") + 8);
-    double memory_used = std::stod(temp) / 1000;
+    std::string mem = line.substr(line.find("avgdata ") + 8);
+    double memory_used = std::stod(mem) / 1000;
     if (memory_used > memory_limit) {
         std::cout << "\x1b[31m" << "MLE\n" << "\x1b[0m";
         return;
