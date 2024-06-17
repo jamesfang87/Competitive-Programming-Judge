@@ -7,21 +7,27 @@
 #include <cmath>
 #include <sstream>
 
-std::string src_path = "\"path/to/src\"";
-std::string test_data_path = "path/to/testdata"; // make sure there are no spaces in the path
+std::string src_path = "\"pathtosrc\"";
+std::string test_data_path = "pathtotestdata"; // make sure there are no spaces in path
 double time_limit = 2.0; // 2s = 2000ms
 double memory_limit = 256; // 256mb
 std::string compiler_flags = " -std=c++17 -O2 -lm -Wall "; // keep the leading and trailing spaces
 
 double get_execution_time(const std::string& line) {
-    // check time limit
+    /*
+     * returns execution time of submission program
+     */
+    
     // runtime comes after the first occurrence of ":"
     std::string time = line.substr(line.find(':') + 1);
     return std::stod(time);
 }
 
-double get_memory_used(const std::string& line) {
-    // check memory limit
+double get_memory_usage(const std::string& line) {
+    /*
+     * returns memory usage of submission program
+     */
+    
     // max resident contains memory usage it occurs after "avgdata"
     std::string mem = line.substr(line.find("avgdata ") + 8);
     return std::stod(mem) / 1000;
@@ -69,11 +75,13 @@ void check(int exit_code, int test_number) {
      * RE: runtime error
      * WA: wrong answer
      */
+
     std::cout << "Verdict for test case " << test_number << ": ";
 
     /*
      * exit code check:
      */
+
     if (exit_code != 0) {
         std::cout << "\t  \x1b[31m" << "RE with exit code: " << exit_code << "\x1b[0m" << std::endl;
         return;
@@ -97,7 +105,7 @@ void check(int exit_code, int test_number) {
     }
 
     // check mem limit
-    double memory_usage = get_memory_used(line);
+    double memory_usage = get_memory_usage(line);
     if (memory_usage > memory_limit) {
         std::cout << "\x1b[31m" << "MLE\n" << "\x1b[0m" << std::endl;
         return;
