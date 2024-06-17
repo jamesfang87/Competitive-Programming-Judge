@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <vector>
 #include <cmath>
-#include <sstream>
 
 std::string src_path = "\"pathtosrc\"";
 std::string test_data_path = "pathtotestdata"; // make sure there are no spaces in path
