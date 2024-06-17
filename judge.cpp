@@ -8,7 +8,7 @@
 #include <sstream>
 
 std::string src_path = "\"path/to/src\"";
-std::string test_data_path = "path/to/testdata";
+std::string test_data_path = "path/to/testdata"; // make sure there are no spaces in the path
 double time_limit = 2.0; // 2s = 2000ms
 double memory_limit = 256; // 256mb
 std::string compiler_flags = " -std=c++17 -O2 -lm -Wall "; // keep the leading and trailing spaces
