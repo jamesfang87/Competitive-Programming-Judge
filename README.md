@@ -1,1 +1,1 @@
-This program should be compiled with g++. It and only supports MacOS. Make sure that your program takes in input from stdin rather than file input, and that you output a newline at the end of your output or else the program will not work.
+This program should be compiled with g++. It should work on both MacOS and WSL. Make sure that your program takes in input from stdin rather than file input, and that you output a newline at the end of your output or else the program will not work.
