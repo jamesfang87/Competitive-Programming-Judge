@@ -51,14 +51,12 @@ std::vector<std::string> extract_output(const std::string& file_path) {
     return output;
 }
 
-std::vector<std::string>
-clean_output(const std::vector<std::string>& raw_output) {
-    /*
-     * removes all whitespace from the end of a vector representing output to a
-     * file
-     */
+/**
+ * @brief removes all trailing and leading whitespace from output
+ */
+std::vector<std::string> clean_output(const std::vector<std::string>& raw) {
     std::vector<std::string> ret;
-    for (const std::string& line : raw_output) {
+    for (const std::string& line : raw) {
         if (line.find_first_not_of(" \t\n\v\f\r") != std::string::npos) {
             ret.push_back(line);
         }
@@ -91,7 +89,6 @@ std::string Judge::check_test(int exit_code, int test_num) {
     // check time limit
     double execution_time = get_execution_time(line);
     if (execution_time > time_limit) {
-        std::cout << "\x1b[31m" << "TLE\n" << "\x1b[0m" << std::endl;
         return "TLE";
     }
 
@@ -114,9 +111,9 @@ std::string Judge::check_test(int exit_code, int test_num) {
 
     // check for wrong answer
     if (clean_output(expected) != clean_output(out)) {
-        std::cout << "\x1b[31m" << "WA" << "\x1b[0m";
+        return "WA";
     } else {
-        std::cout << "\x1b[92m" << "AC" << "\x1b[0m";
+        return "AC";
     }
     return (clean_output(expected) != clean_output(out)) ? "WA" : "AC";
     // output execution time and memory usage only if WA or AC
@@ -175,7 +172,15 @@ void Judge::run_tests(std::string submission_path, std::string tests_path) {
     for (int i = 1; i <= n; i++) {
         // run executable with test i as input
         std::cout << "Verdict for test case " << i << ": ";
-        run_test(i);
+        std::string res = run_test(i);
+        if (res == "AC") {
+            std::cout << "\x1b[92m" << "AC" << "\x1b[0m";
+        } else if (res == "WA") {
+
+            std::cout << "\x1b[31m" << "WA" << "\x1b[0m";
+        }
+        std::cout << "\x1b[31m" << "TLE\n" << "\x1b[0m" << std::endl;
+        el
     }
 }
 
