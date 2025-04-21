@@ -1,193 +1,149 @@
 #include "judge.hpp"
-
-#include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
-#include <ostream>
 #include <string>
 #include <vector>
 
-/**
- *
- */
-double get_execution_time(const std::string& line) {
-    /*
-     * returns execution time of submission program
-     */
+using namespace std::filesystem;
 
-    // runtime comes after the first occurrence of ":"
-    std::string time = line.substr(line.find(':') + 1);
-    return std::stod(time);
+// Helper functions
+namespace {
+double get_execution_time(const std::string& line) {
+    size_t colon_pos = line.find(':');
+    if (colon_pos == std::string::npos)
+        return 0.0;
+    return std::stod(line.substr(colon_pos + 1));
 }
 
 double get_memory_usage(const std::string& line) {
-    /*
-     * returns memory usage of submission program
-     */
-
-    // max resident contains memory usage it occurs after "avgdata"
-    std::string mem = line.substr(line.find("avgdata ") + 8);
-    return std::stod(mem) / 1000;
+    size_t pos = line.find("avgdata ");
+    if (pos == std::string::npos)
+        return 0.0;
+    return std::stod(line.substr(pos + 8)) / 1000.0;
 }
 
-std::vector<std::string> extract_output(const std::string& file_path) {
-    /*
-     * extracts output of a file into a vector
-     * each element in the vector is a line in the file
-     */
+std::vector<std::string> extract_output(const path& file_path) {
     std::ifstream file(file_path);
     std::vector<std::string> output;
-
-    // get next line in file
     std::string line;
-    while (std::getline(file, line)) {
-        // append to vector
-        output.push_back(line);
-    }
-    file.close();
 
+    while (std::getline(file, line)) {
+        if (!line.empty()) {
+            output.push_back(line);
+        }
+    }
     return output;
 }
 
-/**
- * @brief removes all trailing and leading whitespace from output
- */
 std::vector<std::string> clean_output(const std::vector<std::string>& raw) {
-    std::vector<std::string> ret;
-    for (const std::string& line : raw) {
+    std::vector<std::string> cleaned;
+    for (const auto& line : raw) {
         if (line.find_first_not_of(" \t\n\v\f\r") != std::string::npos) {
-            ret.push_back(line);
+            cleaned.push_back(line);
         }
     }
-    return ret;
+    return cleaned;
+}
+} // namespace
+
+// Judge implementation
+Judge::Judge(int time_limit,
+             int mem_limit,
+             std::string compiler_flags,
+             std::string test_data_path)
+    : time_limit(time_limit),
+      mem_limit(mem_limit),
+      compiler_flags(std::move(compiler_flags)),
+      test_data_path(std::move(test_data_path)) {}
+
+int Judge::compile(std::string submission_path) {
+    std::string cmd = "g++ " + compiler_flags + " " + submission_path + " -o " +
+                      executable_path.string();
+    return WEXITSTATUS(system(cmd.c_str()));
 }
 
-/**
- * @brief
- *
- *
- * Return codes key:
- * AC: Accepted
- * TLE: Time Limit Exceeded
- * MLE: Memory Limit Exceeded
- * RE: Runtime Error
- * WA: Wwrong Answer
- */
-std::string Judge::check_test(int exit_code, int test_num) {
-    // first check the exit code of the program
+TestResult Judge::check_test(int exit_code, int test_num) {
+    TestResult result;
+    result.exit_code = exit_code;
+    result.time_used = 0.0;
+    result.mem_used = 0.0;
     if (exit_code != 0) {
-        return "RE";
+        result.verdict = "RE";
+        return result;
     }
 
     std::ifstream runtime_info("runtimeinfo.txt");
-    std::string line;
-    getline(runtime_info, line);
-    runtime_info.close();
-
-    // check time limit
-    double execution_time = get_execution_time(line);
-    if (execution_time > time_limit) {
-        return "TLE";
+    std::string metrics;
+    if (std::getline(runtime_info, metrics)) {
+        result.time_used = get_execution_time(metrics);
+        result.mem_used = get_memory_usage(metrics);
     }
 
-    // check mem limit
-    if (get_memory_usage(line) > this->mem_limit) {
-        std::cout << "\x1b[31m" << "MLE\n" << "\x1b[0m" << std::endl;
-        return "MLE";
+    if (result.time_used > time_limit) {
+        result.verdict = "TLE";
+        return result;
     }
 
-    /*
-     * WA and AC checks:
-     */
-    // extract expected output into a vector
-    std::string expected_out_filepath =
-        test_data_path + "/" + std::to_string(test_num) + ".out";
-    std::vector<std::string> expected = extract_output(expected_out_filepath);
-
-    // extract submission output into a vector
-    std::vector<std::string> out = extract_output("submission_out.txt");
-
-    // check for wrong answer
-    if (clean_output(expected) != clean_output(out)) {
-        return "WA";
-    } else {
-        return "AC";
+    if (result.mem_used > mem_limit) {
+        result.verdict = "MLE";
+        return result;
     }
-    return (clean_output(expected) != clean_output(out)) ? "WA" : "AC";
-    // output execution time and memory usage only if WA or AC
-    std::cout << "  \t" << execution_time * 1000 << " ms "
-              << round(memory_usage * 10) / 10 << " mb" << std::endl;
+
+    path expected_path = std::format("{}/{}.out", test_data_path, test_num);
+    auto expected = clean_output(extract_output(expected_path));
+    auto actual = clean_output(extract_output("out.txt"));
+
+    result.verdict = (expected != actual) ? "WA" : "AC";
+    return result;
 }
 
-std::string Judge::run_test(int test_num) {
-    // base cmd: "./{executable_name}", simply runs the program
-    std::string cmd = "gtime -o runtimeinfo.txt ./submission";
+TestResult Judge::run_test(int test_num) {
+    std::string run_cmd = std::format("./{} < {}/{}.in > out.txt 2>&1",
+                                      executable_path.string(),
+                                      test_data_path,
+                                      test_num);
+    std::string cmd = "/usr/bin/time -o runtimeinfo.txt " + run_cmd;
+    int ret = system(cmd.c_str());
+    TestResult result = check_test(WEXITSTATUS(ret), test_num);
 
-    // redirect input and output:
-    std::string input_name =
-        test_data_path + "/" + std::to_string(test_num) + ".in";
-    cmd += " < " + input_name;
-    cmd += " > submission_out.txt"; // program output, execution time, memory
-                                    // usage written here
+    std::cout << "Test " << test_num << ": \t"
+              << (result.verdict == "AC" ? "\x1b[32m" : "\x1b[31m")
+              << result.verdict << "\x1b[0m"
+              << " \tTime: " << std::fixed << std::setprecision(2)
+              << result.time_used * 1000 << "ms"
+              << " \tMem: " << std::round(result.mem_used * 10) / 10 << "MB\n";
 
-    // run program
-    int submission_ret_code = system(cmd.c_str());
-
-    check(WEXITSTATUS(submission_ret_code), test_num);
+    return result;
 }
 
-int Judge::compile(std::string src_path) {
-    std::string cmd = "g++" + this->compiler_flags + src_path;
-    int exit_code = system(cmd.c_str());
-
-    // Check compilation exit code
-    if (WEXITSTATUS(exit_code) != 0) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-void Judge::run_tests(std::string submission_path, std::string tests_path) {
-    // first compile the given program
-    int success = this->compile(submission_path);
-    if (!success) {
-        std::cerr << "Compilation failed\n" << std::endl;
+void Judge::run_tests(std::string submission_path) {
+    std::cout << "Compiling...\n";
+    if (compile(submission_path) != 0) {
+        std::cerr << "\x1b[31mCompilation failed\x1b[0m\n";
         return;
+    } else {
+        std::cout << "\x1b[32mCompilation successful\n\x1b[0m";
     }
-    std::cout << "Compilation successful\n" << std::endl;
 
-    // now, run tests
-    auto tests_it = std::filesystem::directory_iterator(test_data_path);
-
-    // division by 2 since there are two files per test n: n.in, n.out
-    int n = std::count_if(begin(tests_it), end(tests_it),
-                          [](auto& entry) { return entry.is_regular_file(); }) /
-            2;
-
-    // run against tests
-    std::cout << "Results:" << std::endl;
-    for (int i = 1; i <= n; i++) {
-        // run executable with test i as input
-        std::cout << "Verdict for test case " << i << ": ";
-        std::string res = run_test(i);
-        if (res == "AC") {
-            std::cout << "\x1b[92m" << "AC" << "\x1b[0m";
-        } else if (res == "WA") {
-
-            std::cout << "\x1b[31m" << "WA" << "\x1b[0m";
+    int test_count = 0;
+    directory_iterator it(test_data_path), end;
+    for (; it != end; ++it) {
+        if (it->path().extension() == ".in") {
+            test_count++;
         }
-        std::cout << "\x1b[31m" << "TLE\n" << "\x1b[0m" << std::endl;
-        el
     }
-}
 
-int main() {
+    std::cout << std::format("\nRunning {} tests...\n", test_count);
+    for (int i = 1; i <= test_count; ++i) {
+        run_test(i);
+    }
 
-    // remove output files
-    std::filesystem::remove("submission_out.txt");
-    std::filesystem::remove("submission");
-    std::filesystem::remove("runtimeinfo.txt");
+    // Cleanup
+    remove("out.txt");
+    remove(executable_path);
+    remove("runtimeinfo.txt");
 }

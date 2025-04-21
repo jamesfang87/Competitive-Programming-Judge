@@ -1,3 +1,9 @@
 #include <iostream>
-
-int main(int argc, char* argv[]) { return 0; }
+#include <stdlib.h>
+#include <thread>
+int main() {
+    using std::operator""s;
+    std::this_thread::sleep_for(2s);
+    std::cout << 1;
+    return 0;
+}
