@@ -12,20 +12,6 @@ using namespace std::filesystem;
 
 // Helper functions
 namespace {
-double get_execution_time(const std::string& line) {
-    size_t colon_pos = line.find(':');
-    if (colon_pos == std::string::npos)
-        return 0.0;
-    return std::stod(line.substr(colon_pos + 1));
-}
-
-double get_memory_usage(const std::string& line) {
-    size_t pos = line.find("avgdata ");
-    if (pos == std::string::npos)
-        return 0.0;
-    return std::stod(line.substr(pos + 8)) / 1000.0;
-}
-
 std::vector<std::string> extract_output(const path& file_path) {
     std::ifstream file(file_path);
     std::vector<std::string> output;
@@ -76,11 +62,10 @@ TestResult Judge::check_test(int exit_code, int test_num) {
         return result;
     }
 
-    std::ifstream runtime_info("runtimeinfo.txt");
+    std::ifstream runtime_info("info.txt");
     std::string metrics;
-    if (std::getline(runtime_info, metrics)) {
-        result.time_used = get_execution_time(metrics);
-        result.mem_used = get_memory_usage(metrics);
+    if (runtime_info >> result.time_used >> result.mem_used) {
+        result.mem_used /= 1000.0; // Convert KB to MB
     }
 
     if (result.time_used > time_limit) {
@@ -106,7 +91,7 @@ TestResult Judge::run_test(int test_num) {
                                       executable_path.string(),
                                       test_data_path,
                                       test_num);
-    std::string cmd = "/usr/bin/time -o runtimeinfo.txt " + run_cmd;
+    std::string cmd = "/usr/bin/time -f \"%e %M\" -o info.txt " + run_cmd;
     int ret = system(cmd.c_str());
     TestResult result = check_test(WEXITSTATUS(ret), test_num);
 
@@ -125,9 +110,8 @@ void Judge::run_tests(std::string submission_path) {
     if (compile(submission_path) != 0) {
         std::cerr << "\x1b[31mCompilation failed\x1b[0m\n";
         return;
-    } else {
-        std::cout << "\x1b[32mCompilation successful\n\x1b[0m";
     }
+    std::cout << "\x1b[32mCompilation successful\n\x1b[0m";
 
     int test_count = 0;
     directory_iterator it(test_data_path), end;
@@ -145,5 +129,5 @@ void Judge::run_tests(std::string submission_path) {
     // Cleanup
     remove("out.txt");
     remove(executable_path);
-    remove("runtimeinfo.txt");
+    remove("info.txt");
 }
