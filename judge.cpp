@@ -94,13 +94,15 @@ TestResult Judge::run_test(int test_num) {
     std::string cmd = "/usr/bin/time -f \"%e %M\" -o info.txt " + run_cmd;
     int ret = system(cmd.c_str());
     TestResult result = check_test(WEXITSTATUS(ret), test_num);
+    std::string_view color = (result.verdict == "AC") ? "\x1b[32m" : "\x1b[31m";
 
-    std::cout << "Test " << test_num << ": \t"
-              << (result.verdict == "AC" ? "\x1b[32m" : "\x1b[31m")
-              << result.verdict << "\x1b[0m"
-              << " \tTime: " << std::fixed << std::setprecision(2)
-              << result.time_used * 1000 << "ms"
-              << " \tMem: " << std::round(result.mem_used * 10) / 10 << "MB\n";
+    std::cout << std::format(
+        "Test {}:\t{}{}\x1b[0m\tTime: {:.2f}ms\tMem: {:.1f}MB\n",
+        test_num,
+        color,
+        result.verdict,
+        result.time_used * 1000,
+        result.mem_used);
 
     return result;
 }
