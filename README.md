@@ -1,1 +1,1 @@
-This program should be compiled with g++. It should work on both MacOS and WSL as long as gnu time is installed. Make sure that your program takes in input from stdin rather than file input. The program should still work even if the trailing whitespace between program output and expected output is different.
+A terminal-based judge for competitive programming problems. Programs tested should take input in from stin (ex: std::cin in C++). Tested on Ubuntu on WSL2.
