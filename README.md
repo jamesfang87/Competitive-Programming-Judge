@@ -1,8 +1,9 @@
-A terminal-based judge for competitive programming problems. Programs tested should take input in from stin (ex: std::cin in C++). Tested on Ubuntu on WSL2.
+# A terminal-based judge for competitive programming problems.  <br>
+Programs tested should take input in from stin (ex: std::cin in C++). Tested on Ubuntu on WSL2.
 
-Options:
--t, --time-limit <sec>      Execution time limit (default: 2)
--m, --memory-limit <mb>     Memory limit (default: 256)
--d, --test-dir <path>       Test cases directory
--s, --submission <file>     Submission file
--c, --compiler-flags <flags> Compiler flags
+# Options: <br>
+-t, --time-limit \<sec>         &ensp; &emsp; &emsp; &emsp; &emsp; Execution time limit (default: 2) <br>
+-m, --memory-limit \<mb>        &emsp; &emsp; &emsp; Memory limit (default: 256) <br>
+-d, --test-dir \<path>          &ensp; &emsp; &emsp; &emsp; &emsp; Test cases directory <br>
+-s, --submission \<file>        &emsp; &emsp; &emsp; &emsp; Submission file <br>
+-c, --compiler-flags \<flags>   &emsp; &emsp; Compiler flags <br>
